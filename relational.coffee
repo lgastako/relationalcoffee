@@ -25,8 +25,6 @@ _probe = (l_rel, l_attr, r_hash) ->
 
 
 Array.prototype.hash_join = (r_rel, l_attr, r_attr) ->
-    # Assuming l_rel and r_rel are arrays of objects
-    # And l_attr is the attr on the l_rel to match to r_attr on the r_rel
     # Assumes inner join
 
     l_rel = this.slice 0
@@ -48,12 +46,9 @@ _rename_tuple = (tuple, mapping) ->
 
 
 Array.prototype.rename = (mapping) ->
-    # for tuple in this
-    #     _rename_tuple tuple, mapping
-    new_rel = []
     for tuple in this
-        new_rel.push _rename_tuple tuple, mapping
-    new_rel
+        _rename_tuple tuple, mapping
+
 
 _project_tuple = (tuple, cols) ->
     new_tuple = {}
