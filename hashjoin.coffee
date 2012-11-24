@@ -1,20 +1,20 @@
 _build = (rel, attr) ->
     hash = {}
-    for row in rel
-        if row[attr]?
-            key = row[attr]
-            hash[key] = row
+    for tuple in rel
+        if tuple[attr]?
+            key = tuple[attr]
+            hash[key] = tuple
     hash
 
 
 _probe = (l_rel, l_attr, r_hash) ->
-    for row in l_rel
-        if row.hasOwnProperty l_attr
-            l_key = row[l_attr]
+    for tuple in l_rel
+        if tuple.hasOwnProperty l_attr
+            l_key = tuple[l_attr]
             r_vals = r_hash[l_key]
             if r_vals?
                 for name, value of r_vals
-                    row[name] = value
+                    tuple[name] = value
     l_rel
 
 
@@ -29,6 +29,42 @@ hash_join = (l_rel, r_rel, l_attr, r_attr) ->
 
     _probe l_rel, l_attr, r_hash, r_attr
 
+
+_project_tuple = (tuple, cols) ->
+    new_tuple = {}
+    for col in cols
+        new_tuple[col] = tuple[col]
+    new_tuple
+
+
+_unproject_tuple = (tuple, cols) ->
+    new_tuple = {}
+    for name, val of tuple
+        if name not in cols
+            new_tuple[name] = val
+    new_tuple
+
+
+_project = (f, rel, cols) ->
+    projection = []
+    for tuple in rel
+        new_tuple = f tuple, cols
+        projection.push new_tuple
+    projection
+
+
+project = (rel, cols) -> _project _project_tuple, rel, cols
+unproject = (rel, cols) -> _project _unproject_tuple, rel, cols
+
+
+select = (rel, predicates...) ->
+    new_rel = []
+    for tuple in rel
+        if matches_all_predicates tuple, predicates
+            new_rel.push tuple
+    new_rel
+
+where = select
 
 products = [
     {
@@ -61,4 +97,10 @@ manufacturers = [
 
 results = hash_join products, manufacturers, "manufacturer_id"
 
+results = unproject results, ["manufacturer_id"]
+
 console.log "results:\n", results
+
+# results = project results, ["manufacturer_name", "title"]
+# # results = unproject results, "manufacturer_id"
+# console.log "results:\n", results
