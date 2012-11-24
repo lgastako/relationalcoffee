@@ -1,3 +1,10 @@
+extend = (target, extensions...) ->
+    for extension in extensions
+        for name, value of extension
+            target[name] = value
+    target
+    
+
 _build = (rel, attr) ->
     hash = {}
     for tuple in rel
@@ -13,22 +20,20 @@ _probe = (l_rel, l_attr, r_hash) ->
             l_key = tuple[l_attr]
             r_vals = r_hash[l_key]
             if r_vals?
-                for name, value of r_vals
-                    tuple[name] = value
+                extend tuple, r_vals
     l_rel
 
 
 Array.prototype.hash_join = (r_rel, l_attr, r_attr) ->
-    # NOTE: modifies the array.  We should probably not do this.
-
     # Assuming l_rel and r_rel are arrays of objects
     # And l_attr is the attr on the l_rel to match to r_attr on the r_rel
     # Assumes inner join
 
-    l_rel = this
+    l_rel = this.slice 0
     r_attr = r_attr or l_attr
     r_hash = _build r_rel, r_attr
     _probe l_rel, l_attr, r_hash, r_attr
+
 
 
 _rename_tuple = (tuple, mapping) ->
