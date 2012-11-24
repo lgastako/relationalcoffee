@@ -3,7 +3,7 @@ extend = (target, extensions...) ->
         for name, value of extension
             target[name] = value
     target
-    
+
 
 _build = (rel, attr) ->
     hash = {}
@@ -50,11 +50,13 @@ Array.prototype.rename = (mapping) ->
         _rename_tuple tuple, mapping
 
 
+
 _project_tuple = (tuple, cols) ->
     new_tuple = {}
     for col in cols
         new_tuple[col] = tuple[col]
     new_tuple
+
 
 
 _unproject_tuple = (tuple, cols) ->
@@ -121,12 +123,30 @@ manufacturers = [
     }
 ]
 
+
+# SELECT *
+# FROM products, manufacturers
+# WHERE products.manufacturer_id = manufacturers.manufacturer_id
 results = products.hash_join manufacturers, "manufacturer_id"
+
+# Change
+#    "SELECT *"
+# to
+#    "SELECT title, price, manufacturer_name"
+# for which there is no equivalent SQL, but there
+# is tutorial D (ALL BUT manufacturer_id).
 results = results.unproject "manufacturer_id"
 
 console.log "results:\n", results
 
+
+# SELECT manufacturer_name AS manufacturer
+# FROM results
 console.log "just manufacturers:\n", results.project("manufacturer_name").rename
     manufacturer_name: "manufacturer"
 
-console.log "products by samsung:", products.where (t) -> t.manufacturer_id == 2
+
+# SELECT *
+# FROM products AS p
+# WHERE p.manufacturer_id = 2
+console.log "products by samsung:", products.where (p) -> p.manufacturer_id == 2
