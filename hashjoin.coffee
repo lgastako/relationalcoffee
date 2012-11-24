@@ -18,16 +18,33 @@ _probe = (l_rel, l_attr, r_hash) ->
     l_rel
 
 
-hash_join = (l_rel, r_rel, l_attr, r_attr) ->
+Array.prototype.hash_join = (r_rel, l_attr, r_attr) ->
+    # Note, modifies the array.  We should probably not do this.
+    
     # Assuming l_rel and r_rel are arrays of objects
     # And l_attr is the attr on the l_rel to match to r_attr on the r_rel
     # Assumes inner join
 
+    l_rel = this
     r_attr = r_attr or l_attr
-
     r_hash = _build r_rel, r_attr
-
     _probe l_rel, l_attr, r_hash, r_attr
+
+
+_rename_tuple = (tuple, mapping) ->
+    new_tuple = {}
+    for name, value of tuple
+        if name in mapping
+            alias = mapping[name]
+        else
+            alias = name
+        new_tuple[alias] = value
+    new_tuple
+
+
+Array.prototype.rename = (mapping) ->
+    new_rel = for tuple in this
+        _rename_tuple tuple, mapping
 
 
 _project_tuple = (tuple, cols) ->
@@ -45,26 +62,26 @@ _unproject_tuple = (tuple, cols) ->
     new_tuple
 
 
-_project = (f, rel, cols) ->
+Array.prototype._project = (f, cols) ->
     projection = []
-    for tuple in rel
+    for tuple in this
         new_tuple = f tuple, cols
         projection.push new_tuple
     projection
 
 
-project = (rel, cols) -> _project _project_tuple, rel, cols
-unproject = (rel, cols) -> _project _unproject_tuple, rel, cols
+Array.prototype.project = (cols...) -> this._project _project_tuple, cols
+Array.prototype.unproject = (cols...) -> this._project _unproject_tuple, cols
 
-
-select = (rel, predicates...) ->
+Array.prototype.select = (predicates...) ->
     new_rel = []
-    for tuple in rel
+    for tuple in this
         if matches_all_predicates tuple, predicates
             new_rel.push tuple
     new_rel
 
-where = select
+Array.prototype.where = Array.prototype.select
+
 
 products = [
     {
@@ -95,12 +112,10 @@ manufacturers = [
     }
 ]
 
-results = hash_join products, manufacturers, "manufacturer_id"
-
-results = unproject results, ["manufacturer_id"]
+results = products.hash_join manufacturers, "manufacturer_id"
+results = results.unproject "manufacturer_id"
 
 console.log "results:\n", results
 
-# results = project results, ["manufacturer_name", "title"]
-# # results = unproject results, "manufacturer_id"
-# console.log "results:\n", results
+console.log "just manufacturers:\n", results.project("manufacturer_name").rename
+    manufacturer_name: "manufacturer"
