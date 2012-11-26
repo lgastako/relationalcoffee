@@ -265,3 +265,12 @@ console.log "\ncount of prices aggregation:\n", products.group_by "manufacturer_
 console.log "\navg price aggregation:\n", products.group_by "manufacturer_id", {
     avg_price: agg_avg("price")
 }
+
+
+console.log "\ncombined aggregation:\n", products.group_by "manufacturer_id", {
+    min_price: agg_min("price")
+    max_price: agg_max("price")
+    total_price: agg_sum("price")
+    num_prices: agg_count("price")
+    avg_price: agg_avg("price")
+}
