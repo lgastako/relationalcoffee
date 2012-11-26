@@ -1,5 +1,6 @@
 rel = require "./relational"
 
+
 products = [
     {
         manufacturer_id: 1
@@ -17,6 +18,7 @@ products = [
         price: 349.95
     }
 ]
+
 
 manufacturers = [
     {
@@ -73,27 +75,44 @@ rel2 = [{g: "h", i: "j"}, {g: "k", i: "l"}]
 console.log "\nrel1 crossproduct rel2:\n", rel1.crossproduct rel2
 
 
+# SELECT manufacturer_id, MIN(price) as min_price
+# FROM products
+# GROUP BY manufacturer_id
 console.log "\nmin price aggregation:\n", products.group_by "manufacturer_id", {
     min_price: rel.agg_min("price")
 }
 
+
+# SELECT manufacturer_id, MAX(price) AS max_price
 console.log "\nmax price aggregation:\n", products.group_by "manufacturer_id", {
     max_price: rel.agg_max("price")
 }
 
+
+# SELECT manufacturer_id, SUM(price) AS total_price
 console.log "\ntotal price (sum) aggregation:\n", products.group_by "manufacturer_id", {
     total_price: rel.agg_sum("price")
 }
 
+# SELECT manufacturer_id, COUNT(price) AS num_prices
 console.log "\ncount of prices aggregation:\n", products.group_by "manufacturer_id", {
     num_prices: rel.agg_count("price")
 }
 
+# SELECT manufacturer_id, AVG(price) as avg_price
 console.log "\navg price aggregation:\n", products.group_by "manufacturer_id", {
     avg_price: rel.agg_avg("price")
 }
 
 
+# SELECT manufacturer_id,
+#        MIN(price) AS min_price,
+#        MAX(price) AS max_price,
+#        SUM(price) AS total_price,
+#        COUNT(price) AS num_prices,
+#        AVG(price) AS avg_price
+# FROM products
+# GROUP BY manufacturer_id
 console.log "\ncombined aggregation:\n", products.group_by "manufacturer_id", {
     min_price: rel.agg_min("price")
     max_price: rel.agg_max("price")
