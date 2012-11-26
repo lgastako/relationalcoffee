@@ -93,6 +93,80 @@ Array.prototype.select = (predicates...) ->
 
 Array.prototype.where = Array.prototype.select
 
+Array.prototype.crossproduct = (rels...) ->
+    results = []
+    other = rels[0]
+    for tup1 in this
+        for tup2 in other
+            newtup = {}
+            for name, value of tup1
+                newtup[name] = value
+            for name, vale of tup2
+                newtup[name] = vale
+            results.push newtup
+    if rels.length > 1
+        return results.crossproduct rels[1..]
+    else
+        return results
+
+# Array.prototype.group_by = (cols...) ->
+#     groups = {}
+#     for row in this
+#         vals = (row[col] for col in cols)
+#         groups[vals] = row
+#     for _, rows of groups
+#         
+# 
+# 
+# foo = [
+#     {
+#         a: 1
+#         b: 2
+#     },
+#     {
+#         a: 2
+#         b: 2
+#     },
+#     {
+#         a: 3
+#         b: 4
+#     }
+# ]
+# 
+# console.log "foo.group_by a", foo.group_by "a", "b"
+
+# Example data extrapolized from 
+# http://www.oracle.com/technetwork/articles/sql/11g-pivot-097235.html
+customers = [
+    {
+        cust_id: 1
+        state_code: "CT"
+        times_purchased: 1
+    }
+    {
+        cust_id: 2
+        state_code: "NY"
+        times_purchased: 10
+    }
+    {
+        cust_id: 3
+        state_code: "CT"
+        times_purchased: 2
+    }
+    {
+        cust_id: 4
+        state_code: "NY"
+        times_purchased: 4
+    }
+]
+
+# customers.
+# 
+# Array.prototype.pivot = (col) ->
+    
+
+# console.log "pivot", p_rel.pivot "times_purchased"
+
 
 products = [
     {
@@ -124,29 +198,40 @@ manufacturers = [
 ]
 
 
-# SELECT *
-# FROM products, manufacturers
-# WHERE products.manufacturer_id = manufacturers.manufacturer_id
+#     SELECT *
+#     FROM products, manufacturers
+#     WHERE products.manufacturer_id = manufacturers.manufacturer_id
+# or
+#     SELECT *
+#     FROM products INNER JOIN manufacturers USING manufacturer_id
 results = products.hash_join manufacturers, "manufacturer_id"
 
 # Change
 #    "SELECT *"
 # to
 #    "SELECT title, price, manufacturer_name"
-# for which there is no equivalent SQL, but there
-# is tutorial D (ALL BUT manufacturer_id).
+# using the Tutorial D style inversion projection
+# (i.e. "ALL BUT manufacturer_id").
 results = results.unproject "manufacturer_id"
 
-console.log "results:\n", results
+console.log "products with manufacturers:\n", results
 
 
 # SELECT manufacturer_name AS manufacturer
 # FROM results
-console.log "just manufacturers:\n", results.project("manufacturer_name").rename
+console.log "\njust manufacturers:\n", results.project("manufacturer_name").rename
     manufacturer_name: "manufacturer"
 
 
 # SELECT *
 # FROM products AS p
 # WHERE p.manufacturer_id = 2
-console.log "products by samsung:", products.where (p) -> p.manufacturer_id == 2
+console.log "\nproducts by samsung:\n", products.where (p) -> p.manufacturer_id == 2
+
+
+console.log "\nproducts that dont start with G:\n", products.where (p) -> p.title? and p.title[0] != "G"
+console.log "\nproducts over $100:\n", products.where (p) -> p.price > 100
+
+rel1 = [{a: "b", c: "d"}, {a: "e", c: "f"}]
+rel2 = [{g: "h", i: "j"}, {g: "k", i: "l"}]
+console.log "\nrel1 crossproduct rel2:\n", rel1.crossproduct rel2
