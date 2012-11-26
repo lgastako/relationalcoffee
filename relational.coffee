@@ -109,76 +109,18 @@ Array.prototype.crossproduct = (rels...) ->
     else
         return results
 
-# Array.prototype.group_by = (cols...) ->
-#     groups = {}
-#     for row in this
-#         vals = (row[col] for col in cols)
-#         groups[vals] = row
-#     for _, rows of groups
-#         
-# 
-# 
-# foo = [
-#     {
-#         a: 1
-#         b: 2
-#     },
-#     {
-#         a: 2
-#         b: 2
-#     },
-#     {
-#         a: 3
-#         b: 4
-#     }
-# ]
-# 
-# console.log "foo.group_by a", foo.group_by "a", "b"
-
-# Example data extrapolized from 
-# http://www.oracle.com/technetwork/articles/sql/11g-pivot-097235.html
-customers = [
-    {
-        cust_id: 1
-        state_code: "CT"
-        times_purchased: 1
-    }
-    {
-        cust_id: 2
-        state_code: "NY"
-        times_purchased: 10
-    }
-    {
-        cust_id: 3
-        state_code: "CT"
-        times_purchased: 2
-    }
-    {
-        cust_id: 4
-        state_code: "NY"
-        times_purchased: 4
-    }
-]
-
-# customers.
-# 
-# Array.prototype.pivot = (col) ->
-    
-
-# console.log "pivot", p_rel.pivot "times_purchased"
-
 
 products = [
     {
         manufacturer_id: 1
         title: "iPad 8gb black"
         price: 69.95
-    },
+    }
     {
         manufacturer_id: 1
         title: "iPad 16gb black"
-        price: 69.95
-    },
+        price: 89.95
+    }
     {
         manufacturer_id: 2
         title: "Galaxy Tab"
@@ -190,7 +132,7 @@ manufacturers = [
     {
         manufacturer_id: 1
         manufacturer_name: "Apple"
-    },
+    }
     {
         manufacturer_id: 2
         manufacturer_name: "Samsung"
@@ -234,4 +176,92 @@ console.log "\nproducts over $100:\n", products.where (p) -> p.price > 100
 
 rel1 = [{a: "b", c: "d"}, {a: "e", c: "f"}]
 rel2 = [{g: "h", i: "j"}, {g: "k", i: "l"}]
+
+
+# SELECT *
+# FROM rel1, rel2
 console.log "\nrel1 crossproduct rel2:\n", rel1.crossproduct rel2
+
+
+agg_max = (col) ->
+    (tuples) ->
+        result = tuples[0][col]
+        for tuple in tuples[1..]
+            val = tuple[col]
+            if val > result
+                result = val
+        result
+
+agg_min = (col) ->
+    (tuples) ->
+        result = tuples[0][col]
+        for tuple in tuples[1..]
+            val = tuple[col]
+            if val < result
+                result = val
+        result
+
+
+agg_sum = (col) ->
+    (tuples) ->
+        result = tuples[0][col]
+        for tuple in tuples[1..]
+            result = result + tuple[col]
+        result
+
+
+agg_count = (col) ->
+    (tuples) ->
+        result = 0
+        for tuple in tuples
+            val = tuple[col]
+            if val?
+                result += 1
+        result
+
+
+agg_avg = (col) ->
+    # Not efficient, but we can optimize later
+    (tuples) ->
+        agg_sum(col)(tuples) / agg_count(col)(tuples)
+
+
+Array.prototype.group_by = (cols, aggs) ->
+    if typeof cols == "string"
+        cols = [cols]
+    groups = {}
+    for tuple in this
+        vals = (tuple[col] for col in cols)
+        if not groups[vals]?
+            groups[vals] = []
+        groups[vals].push tuple
+    results = []
+    for _, tuples of groups
+        new_tup = {}
+        for col in cols
+            new_tup[col] = tuples[0][col]
+        for name, expr of aggs
+            new_tup[name] = expr tuples
+        results.push new_tup
+    results
+
+
+console.log "\nmin price aggregation:\n", products.group_by "manufacturer_id", {
+    min_price: agg_min("price")
+}
+
+console.log "\nmax price aggregation:\n", products.group_by "manufacturer_id", {
+    max_price: agg_max("price")
+}
+
+console.log "\ntotal price (sum) aggregation:\n", products.group_by "manufacturer_id", {
+    total_price: agg_sum("price")
+}
+
+console.log "\ncount of prices aggregation:\n", products.group_by "manufacturer_id", {
+    num_prices: agg_count("price")
+}
+
+console.log "\navg price aggregation:\n", products.group_by "manufacturer_id", {
+    avg_price: agg_avg("price")
+}
